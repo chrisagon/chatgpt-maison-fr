@@ -8,6 +8,18 @@ https://user-images.githubusercontent.com/110412045/223754183-8b7f45ce-6517-4bd5
 
 ## Updates
 <details open>
+<summary><strong>2023-03-20</strong></summary>
+
+
+
+**Searching messages** is almost here as I test more of its functionality. There've been a lot of great features requested and great contributions and I will work on some soon, namely, further customizing the custom gpt params with sliders similar to the OpenAI playground, and including the custom params and system messages available to Bing.
+
+The above features are next and then I will have to focus on building the **test environment.** I would **greatly appreciate** help in this area with any test environment you're familiar with (mocha, chai, jest, playwright, puppeteer). This is to aid in the velocity of contributing and to save time I spend debugging.
+
+</details>
+
+<details>
+<details>
 <summary><strong>2023-03-16</strong></summary>
 
 
@@ -17,8 +29,6 @@ https://user-images.githubusercontent.com/110412045/223754183-8b7f45ce-6517-4bd5
 Full details and [example here](https://github.com/danny-avila/chatgpt-clone/releases/tag/v0.0.4). Message search is on the docket
 
 </details>
-
-<details>
 <details>
 <summary><strong>2023-03-12</strong></summary>
 
