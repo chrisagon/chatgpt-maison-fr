@@ -1,27 +1,51 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import _ from 'lodash';
 import NewChat from './NewChat';
 import Spinner from '../svg/Spinner';
+import Pages from '../Conversations/Pages';
 import Conversations from '../Conversations';
 import NavLinks from './NavLinks';
-import useDidMountEffect from '~/hooks/useDidMountEffect';
-import { swr } from '~/utils/fetchers';
+import { searchFetcher, swr } from '~/utils/fetchers';
 import { useDispatch, useSelector } from 'react-redux';
-import { increasePage, decreasePage, setPage, setConvos, setPages, setConversation } from '~/store/convoSlice';
+import { setConvos, setNewConvo, refreshConversation } from '~/store/convoSlice';
+import { setMessages } from '~/store/messageSlice';
+import { setDisabled } from '~/store/submitSlice';
 
 export default function Nav({ navVisible, setNavVisible }) {
   const dispatch = useDispatch();
   const [isHovering, setIsHovering] = useState(false);
-  const { conversationId, convos, pages, pageNumber, refreshConvoHint } = useSelector(
-    (state) => state.convo
-  );
-  const onSuccess = (data) => {
-    const { conversations, pages } = data;
+  const [isFetching, setIsFetching] = useState(false);
+  const [pages, setPages] = useState(1);
+  const [pageNumber, setPage] = useState(1);
+  const { search, query } = useSelector((state) => state.search);
+  const { conversationId, convos, refreshConvoHint } = useSelector((state) => state.convo);
+  
+  const onSuccess = (data, searchFetch = false) => {
+    if (search) {
+      return;
+    }
 
+    const { conversations, pages } = data;
     if (pageNumber > pages) {
-      dispatch(setPage(pages));
+      setPage(pages);
     } else {
-      dispatch(setConvos(conversations));
-      dispatch(setPages(pages));
+      dispatch(setConvos({ convos: conversations, searchFetch }));
+      setPages(pages);
+    }
+  };
+
+  const onSearchSuccess = (data, expectedPage) => {
+    const res = data;
+    dispatch(setConvos({ convos: res.conversations, searchFetch: true }));
+    if (expectedPage) {
+      setPage(expectedPage);
+    }
+    setPage(res.pageNumber);
+    setPages(res.pages);
+    setIsFetching(false);
+    if (res.messages) {
+      dispatch(setMessages(res.messages));
+      dispatch(setDisabled(true));
     }
 
     const convo = conversations.find(element => element.conversationId == conversationId)
@@ -29,8 +53,18 @@ export default function Nav({ navVisible, setNavVisible }) {
       dispatch(setConversation(convo));
   };
 
+  const fetch = useCallback(_.partialRight(searchFetcher.bind(null, () => setIsFetching(true)), onSearchSuccess), [dispatch]);
+
+  const clearSearch = () => {
+    setPage(1);
+    dispatch(refreshConversation());
+    dispatch(setNewConvo());
+    dispatch(setMessages([]));
+    dispatch(setDisabled(false));
+  };
+
   const { data, isLoading, mutate } = swr(`/api/convos?pageNumber=${pageNumber}`, onSuccess, {
-    revalidateOnMount: false
+    revalidateOnMount: false,
   });
 
   const containerRef = useRef(null);
@@ -46,19 +80,29 @@ export default function Nav({ navVisible, setNavVisible }) {
   const nextPage = async () => {
     moveToTop();
 
-    dispatch(increasePage());
-    await mutate();
+    if (!search) {
+      setPage((prev) => prev + 1);
+      await mutate();
+    } else {
+      await fetch(query, +pageNumber + 1);
+    }
   };
 
   const previousPage = async () => {
     moveToTop();
 
-    dispatch(decreasePage());
-    await mutate();
+    if (!search) {
+      setPage((prev) => prev - 1);
+      await mutate();
+    } else {
+      await fetch(query, +pageNumber - 1);
+    }
   };
 
   useEffect(() => {
-    mutate();
+    if (!search) {
+      mutate();
+    }
   }, [pageNumber, conversationId, refreshConvoHint]);
 
   useEffect(() => {
@@ -108,22 +152,29 @@ export default function Nav({ navVisible, setNavVisible }) {
                 ref={containerRef}
               >
                 <div className={containerClasses}>
-                  {isLoading && pageNumber === 1 ? (
+                  {/* {(isLoading && pageNumber === 1) ? ( */}
+                  {(isLoading && pageNumber === 1) || (isFetching) ? (
                     <Spinner />
                   ) : (
                     <Conversations
                       conversations={convos}
                       conversationId={conversationId}
-                      nextPage={nextPage}
-                      previousPage={previousPage}
                       moveToTop={moveToTop}
-                      pageNumber={pageNumber}
-                      pages={pages}
                     />
                   )}
+                  <Pages
+                    pageNumber={pageNumber}
+                    pages={pages}
+                    nextPage={nextPage}
+                    previousPage={previousPage}
+                  />
                 </div>
               </div>
-              <NavLinks />
+              <NavLinks
+                fetch={fetch}
+                onSearchSuccess={onSearchSuccess}
+                clearSearch={clearSearch}
+              />
             </nav>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Spinner from '../svg/Spinner';
+import { throttle } from 'lodash';
 import { CSSTransition } from 'react-transition-group';
 import ScrollToBottom from './ScrollToBottom';
 import MultiMessage from './MultiMessage';
@@ -34,10 +35,11 @@ export default function Messages({ messages, messageTree }) {
     };
   }, [messages]);
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback(throttle(() => {
+    console.log('scrollToBottom');
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     setShowScrollButton(false);
-  }, [messagesEndRef]);
+  }, 750, { leading: true }), [messagesEndRef]);
 
   const handleScroll = () => {
     const { scrollTop, scrollHeight, clientHeight } = scrollableRef.current;
@@ -73,7 +75,7 @@ export default function Messages({ messages, messageTree }) {
           <div className="flex w-full items-center justify-center gap-1 border-b border-black/10 bg-gray-50 p-3 text-sm text-gray-500 dark:border-gray-900/50 dark:bg-gray-700 dark:text-gray-300">
             Model: {modelName} {customModel ? `(${customModel})` : null}
           </div>
-          {messageTree.length === 0 ? (
+          {(messageTree.length === 0) ? (
             <Spinner />
           ) : (
             <>

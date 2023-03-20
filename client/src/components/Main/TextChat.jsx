@@ -17,7 +17,7 @@ import {
   refreshConversation
 } from '~/store/convoSlice';
 import { setMessages } from '~/store/messageSlice';
-import { setSubmitState, setSubmission } from '~/store/submitSlice';
+import { setSubmitState, toggleCursor } from '~/store/submitSlice';
 import { setText } from '~/store/textSlice';
 import { useMessageHandler } from '../../utils/handleSubmit';
 
@@ -238,6 +238,7 @@ export default function TextChat({ messages }) {
 
       if (data.final) {
         convoHandler(data, currentState, currentMsg);
+        dispatch(toggleCursor());
         console.log('final', data);
       }
       if (data.created) {
@@ -247,6 +248,7 @@ export default function TextChat({ messages }) {
         let text = data.text || data.response;
         if (data.initial) {
           console.log(data);
+          dispatch(toggleCursor());
         }
         if (data.message) {
           latestResponseText = text;
@@ -268,6 +270,7 @@ export default function TextChat({ messages }) {
     events.onmessage = onMessage;
 
     events.oncancel = (e) => {
+      dispatch(toggleCursor(true));
       cancelHandler(latestResponseText, currentState, currentMsg);
     };
 
@@ -276,7 +279,7 @@ export default function TextChat({ messages }) {
       events.close();
 
       const data = JSON.parse(e.data);
-
+      dispatch(toggleCursor(true));
       errorHandler(data, currentState, currentMsg);
     };
 
@@ -284,6 +287,7 @@ export default function TextChat({ messages }) {
 
     return () => {
       events.removeEventListener('message', onMessage);
+      dispatch(toggleCursor(true));
       const isCancelled = events.readyState <= 1;
       events.close();
       if (isCancelled) {
@@ -343,12 +347,29 @@ export default function TextChat({ messages }) {
     dispatch(setError(false));
   };
 
+  const isSearchView = messages?.[0]?.searchResult === true;
+  const getPlaceholderText = () => {
+    if (isSearchView) {
+      return 'Click a message to open its conversation.'
+    }
+
+    if (disabled) {
+      return 'Choose another model or customize GPT again';
+    }
+  
+    if (isNotAppendable) {
+      return 'Edit your message or Regenerate.'
+    }
+  
+    return '';
+  };
+
   return (
     <div className="input-panel md:bg-vert-light-gradient dark:md:bg-vert-dark-gradient fixed bottom-0 left-0 w-full border-t bg-white py-2 dark:border-white/20 dark:bg-gray-800 md:absolute md:border-t-0 md:border-transparent md:bg-transparent md:dark:border-transparent md:dark:bg-transparent">
       <form className="stretch mx-2 flex flex-row gap-3 last:mb-2 md:pt-2 md:last:mb-6 lg:mx-auto lg:max-w-3xl lg:pt-6">
         <div className="relative flex h-full flex-1 md:flex-col">
           <span className="order-last ml-1 flex justify-center gap-0 md:order-none md:m-auto md:mb-2 md:w-full md:gap-2">
-            {isSubmitting ? (
+            {isSubmitting && !isSearchView ? (
               <button
                 onClick={handleStopGenerating}
                 className="input-panel-button btn btn-neutral flex justify-center gap-2 border-0 md:border"
@@ -357,7 +378,7 @@ export default function TextChat({ messages }) {
                 <StopGeneratingIcon />
                 <span className="hidden md:block">Stop generating</span>
               </button>
-            ) : latestMessage && !latestMessage?.isCreatedByUser ? (
+            ) : latestMessage && !latestMessage?.isCreatedByUser && !isSearchView ? (
               <button
                 onClick={handleRegenerate}
                 className="input-panel-button btn btn-neutral flex justify-center gap-2 border-0 md:border"
@@ -388,15 +409,9 @@ export default function TextChat({ messages }) {
               onChange={changeHandler}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              placeholder={
-                disabled
-                  ? 'Choose another model or customize GPT again'
-                  : isNotAppendable
-                  ? 'Edit your message or Regenerate.'
-                  : ''
-              }
+              placeholder={getPlaceholderText()}
               disabled={disabled || isNotAppendable}
-              className="m-0 h-auto max-h-52 resize-none overflow-auto border-0 bg-transparent p-0 pl-12 pr-8 leading-6 placeholder:text-sm focus:outline-none focus:ring-0 focus-visible:ring-0 dark:bg-transparent md:pl-8"
+              className="m-0 h-auto max-h-52 resize-none overflow-auto border-0 bg-transparent p-0 pl-12 pr-8 leading-6 placeholder:text-sm placeholder:text-gray-600 dark:placeholder:text-gray-500 focus:outline-none focus:ring-0 focus-visible:ring-0 dark:bg-transparent md:pl-8"
             />
             <SubmitButton
               submitMessage={submitMessage}

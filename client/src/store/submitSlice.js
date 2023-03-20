@@ -9,6 +9,7 @@ const initialState = {
   promptPrefix: null,
   chatGptLabel: null,
   customModel: null,
+  cursor: true,
 };
 
 const currentSlice = createSlice({
@@ -33,8 +34,14 @@ const currentSlice = createSlice({
     setModel: (state, action) => {
       state.model = action.payload;
     },
+    toggleCursor: (state, action) => {
+      if (action.payload) {
+        state.cursor = action.payload;
+      } else {
+        state.cursor = !state.cursor;
+      }
+    },
     setCustomGpt: (state, action) => {
-      console.log('setCustomGpt', action.payload);
       state.promptPrefix = action.payload.promptPrefix;
       state.chatGptLabel = action.payload.chatGptLabel;
     },
@@ -44,7 +51,7 @@ const currentSlice = createSlice({
   }
 });
 
-export const { setSubmitState, setSubmission, setStopStream, setDisabled, setModel, setCustomGpt, setCustomModel } =
+export const { toggleCursor, setSubmitState, setSubmission, setStopStream, setDisabled, setModel, setCustomGpt, setCustomModel } =
   currentSlice.actions;
 
 export default currentSlice.reducer;

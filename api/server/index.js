@@ -1,7 +1,7 @@
 const express = require('express');
 const session = require('express-session')
-const dbConnect = require('../models/dbConnect');
-const { migrateDb } = require('../models');
+const connectDb = require('../lib/db/connectDb');
+const migrateDb = require('../lib/db/migrateDb');
 const path = require('path');
 const cors = require('cors');
 const routes = require('./routes');
@@ -10,7 +10,7 @@ const port = process.env.PORT || 3080;
 const host = process.env.HOST || 'localhost'
 const userSystemEnabled = process.env.ENABLE_USER_SYSTEM || false
 const projectPath = path.join(__dirname, '..', '..', 'client');
-dbConnect().then(() => {
+connectDb().then(() => {
   console.log('Connected to MongoDB');
   migrateDb();
 });
@@ -25,10 +25,12 @@ app.use(session({
   saveUninitialized: true,
 }))
 
-app.get('/', routes.authenticatedOrRedirect, function (req, res) {
-  console.log(path.join(projectPath, 'public', 'index.html'));
-  res.sendFile(path.join(projectPath, 'public', 'index.html'));
-});
+/* chore: potential redirect error here, can only comment out this block; 
+    comment back in if using auth routes i guess */
+// app.get('/', routes.authenticatedOrRedirect, function (req, res) {
+//   console.log(path.join(projectPath, 'public', 'index.html'));
+//   res.sendFile(path.join(projectPath, 'public', 'index.html'));
+// });
 
 app.get('/api/me', function (req, res) {
   if (userSystemEnabled) {
@@ -43,6 +45,7 @@ app.get('/api/me', function (req, res) {
   }
 });
 
+app.use('/api/search', routes.authenticatedOr401, routes.search);
 app.use('/api/ask', routes.authenticatedOr401, routes.ask);
 app.use('/api/messages', routes.authenticatedOr401, routes.messages);
 app.use('/api/convos', routes.authenticatedOr401, routes.convos);

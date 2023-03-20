@@ -15,8 +15,9 @@ const initialState = {
   pageNumber: 1,
   pages: 1,
   refreshConvoHint: 0,
+  search: false,
   latestMessage: null,
-  convos: [],
+  convos: []
 };
 
 const currentSlice = createSlice({
@@ -56,9 +57,12 @@ const currentSlice = createSlice({
       state.latestMessage = null;
     },
     setConvos: (state, action) => {
-      state.convos = action.payload.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
+      const { convos, searchFetch } = action.payload;
+      if (searchFetch) {
+        state.convos = convos;
+      } else {
+        state.convos = convos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
     },
     setPages: (state, action) => {
       state.pages = action.payload;
@@ -71,11 +75,23 @@ const currentSlice = createSlice({
     },
     setLatestMessage: (state, action) => {
       state.latestMessage = action.payload;
-    },
+    }
   }
 });
 
-export const { refreshConversation, setConversation, setPages, setConvos, setNewConvo, setError, increasePage, decreasePage, setPage, removeConvo, removeAll, setLatestMessage } =
-  currentSlice.actions;
+export const {
+  refreshConversation,
+  setConversation,
+  setPages,
+  setConvos,
+  setNewConvo,
+  setError,
+  increasePage,
+  decreasePage,
+  setPage,
+  removeConvo,
+  removeAll,
+  setLatestMessage
+} = currentSlice.actions;
 
 export default currentSlice.reducer;

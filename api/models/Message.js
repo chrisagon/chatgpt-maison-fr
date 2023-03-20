@@ -1,14 +1,18 @@
 const mongoose = require('mongoose');
+const mongoMeili = require('../lib/db/mongoMeili');
 
 const messageSchema = mongoose.Schema({
   messageId: {
     type: String,
     unique: true,
-    required: true
+    required: true,
+    index: true,
+    meiliIndex: true
   },
   conversationId: {
     type: String,
-    required: true
+    required: true,
+    meiliIndex: true
   },
   conversationSignature: {
     type: String,
@@ -26,11 +30,13 @@ const messageSchema = mongoose.Schema({
   },
   sender: {
     type: String,
-    required: true
+    required: true,
+    meiliIndex: true
   },
   text: {
     type: String,
-    required: true
+    required: true,
+    meiliIndex: true
   },
   isCreatedByUser: {
     type: Boolean,
@@ -41,12 +47,27 @@ const messageSchema = mongoose.Schema({
     type: Boolean,
     default: false
   },
+  _meiliIndex: { 
+    type: Boolean, 
+    required: false, 
+    select: false, 
+    default: false 
+  }
 }, { timestamps: true });
+
+// messageSchema.plugin(mongoMeili, {
+//   host: process.env.MEILI_HOST,
+//   apiKey: process.env.MEILI_KEY,
+//   indexName: 'messages', // Will get created automatically if it doesn't exist already
+//   primaryKey: 'messageId',
+// });
 
 const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 
 module.exports = {
-  saveMessage: async ({ messageId, oldMessageId = messageId, conversationId, parentMessageId, sender, text, isCreatedByUser=false, error }) => {
+  messageSchema,
+  Message,
+  saveMessage: async ({ messageId, conversationId, parentMessageId, sender, text, isCreatedByUser=false, error }) => {
     try {
       await Message.findOneAndUpdate({ messageId: oldMessageId }, {
         messageId,
