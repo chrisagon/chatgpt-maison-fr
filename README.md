@@ -169,7 +169,7 @@ Le ChatGPT peut être "personnalisé" en définissant un message système ou un 
 
 - **Clonez/téléchargez** le repo à l'endroit désiré
 ```bash
-  git clone https://github.com/chrisagon/chatgpt-maison-fr.git
+  git clone https://github.com/chrisagon/valeria.git
 ```
 - Si vous utilisez MongoDB Atlas, supprimez `&w=majority` de la chaîne de connexion par défaut.
 
